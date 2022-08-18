@@ -1,0 +1,427 @@
+<TrustFrameworkPolicy xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns="http://schemas.microsoft.com/online/cpim/schemas/2013/06" 
+PolicySchemaVersion="0.3.0.0" TenantId="dee2c.onmicrosoft.com"
+ PolicyId="B2C_1A_susi-HRD-phone-or-email" 
+PublicPolicyUri="http://yourtenant.onmicrosoft.com/B2C_1A_susi-HRD-phone-or-email"
+DeploymentMode="Development" UserJourneyRecorderEndpoint="urn:journeyrecorder:applicationinsights" >
+  <BasePolicy>
+    <TenantId>dee2c.onmicrosoft.com</TenantId>
+    <PolicyId>B2C_1A_Phone_Email_Base</PolicyId>
+  </BasePolicy>
+
+<BuildingBlocks>
+
+	<ClaimsSchema>
+    <!--Demo: Stores the domain portion of the sign-in email address-->
+	   <ClaimType Id="domainName">
+        <DisplayName>domainName</DisplayName>
+        <DataType>string</DataType>
+      </ClaimType>
+            <ClaimType Id="identityProviders">
+        <DisplayName>IdentityProviders</DisplayName>
+        <DataType>stringCollection</DataType>
+        <UserHelpText>User identity providers</UserHelpText>
+      </ClaimType>
+
+
+      <!-- The claim socialIdpUserId has been renamed to issuerUserId -->
+      <ClaimType Id="issuerUserId">
+        <DisplayName>Username</DisplayName>
+        <DataType>string</DataType>
+        <UserHelpText/>
+        <UserInputType>TextBox</UserInputType>
+        <Restriction>
+          <Pattern RegularExpression="^[a-zA-Z0-9]+[a-zA-Z0-9_-]*$" HelpText="The username you provided is not valid. It must begin with an alphabet or number and can contain alphabets, numbers and the following symbols: _ -" />
+        </Restriction>
+      </ClaimType>
+
+
+      <ClaimType Id="sub">
+        <DisplayName>Subject</DisplayName>
+        <DataType>string</DataType>
+        <DefaultPartnerClaimTypes>
+          <Protocol Name="OpenIdConnect" PartnerClaimType="sub" />
+        </DefaultPartnerClaimTypes>
+        <UserHelpText/>
+      </ClaimType>
+
+      <ClaimType Id="alternativeSecurityId">
+        <DisplayName>AlternativeSecurityId</DisplayName>
+        <DataType>string</DataType>
+        <UserHelpText/>
+      </ClaimType>
+
+      <ClaimType Id="mailNickName">
+        <DisplayName>MailNickName</DisplayName>
+        <DataType>string</DataType>
+        <UserHelpText>Your mail nick name as stored in the Azure Active Directory.</UserHelpText>
+      </ClaimType>
+
+      <ClaimType Id="identityProvider">
+        <DisplayName>Identity Provider</DisplayName>
+        <DataType>string</DataType>
+        <DefaultPartnerClaimTypes>
+          <Protocol Name="OAuth2" PartnerClaimType="idp" />
+          <Protocol Name="OpenIdConnect" PartnerClaimType="idp" />
+          <Protocol Name="SAML2" PartnerClaimType="http://schemas.microsoft.com/identity/claims/identityprovider" />
+        </DefaultPartnerClaimTypes>
+        <UserHelpText/>
+      </ClaimType>
+    </ClaimsSchema>
+
+	<ClaimsTransformations>
+  <!--Demo: Gets the domain portion of the sign-in email address-->
+  <ClaimsTransformation Id="SetDomainName" TransformationMethod="ParseDomain">
+	  <InputClaims>
+		  <InputClaim ClaimTypeReferenceId="signInName" TransformationClaimType="emailAddress" />
+	  </InputClaims>
+	  <OutputClaims>
+		  <OutputClaim ClaimTypeReferenceId="domainName" TransformationClaimType="domain" />
+	  </OutputClaims>
+	</ClaimsTransformation>
+
+  <!--Demo: Changes the case of the 'domainName' claim to lower case -->
+  <ClaimsTransformation Id="SetDomainNameToLower" TransformationMethod="ChangeCase">
+    <InputClaims>
+      <InputClaim ClaimTypeReferenceId="domainName" TransformationClaimType="inputClaim1" />
+    </InputClaims>
+    <InputParameters>
+      <InputParameter Id="toCase" DataType="string" Value="LOWER" />
+    </InputParameters>
+    <OutputClaims>
+      <OutputClaim ClaimTypeReferenceId="domainName" TransformationClaimType="outputClaim" />
+    </OutputClaims>
+  </ClaimsTransformation>
+  <ClaimsTransformation Id="CreateidentityProvidersCollection" TransformationMethod="AddItemToStringCollection">
+        <InputClaims>
+          <InputClaim ClaimTypeReferenceId="domainName" TransformationClaimType="item" />
+          <InputClaim ClaimTypeReferenceId="identityProviders" TransformationClaimType="collection" />
+        </InputClaims>
+        <OutputClaims>
+          <OutputClaim ClaimTypeReferenceId="identityProviders" TransformationClaimType="collection" />
+        </OutputClaims>
+      </ClaimsTransformation>
+
+            <ClaimsTransformation Id="CreateAlternativeSecurityId" TransformationMethod="CreateAlternativeSecurityId">
+        <InputClaims>
+          <InputClaim ClaimTypeReferenceId="issuerUserId" TransformationClaimType="key" />
+          <InputClaim ClaimTypeReferenceId="identityProvider" TransformationClaimType="identityProvider" />
+        </InputClaims>
+        <OutputClaims>
+          <OutputClaim ClaimTypeReferenceId="alternativeSecurityId" TransformationClaimType="alternativeSecurityId" />
+        </OutputClaims>
+      </ClaimsTransformation>
+
+      <ClaimsTransformation Id="CreateSubjectClaimFromAlternativeSecurityId" TransformationMethod="CreateStringClaim">
+        <InputParameters>
+          <InputParameter Id="value" DataType="string" Value="Not supported currently. Use oid claim." />
+        </InputParameters>
+        <OutputClaims>
+          <OutputClaim ClaimTypeReferenceId="sub" TransformationClaimType="createdClaim" />
+        </OutputClaims>
+      </ClaimsTransformation>
+	</ClaimsTransformations>
+  </BuildingBlocks>
+
+  <ClaimsProviders>
+
+  <ClaimsProvider>
+      <DisplayName>Login with AAD OIDC</DisplayName>
+      <TechnicalProfiles>
+        <TechnicalProfile Id="AAD-OIDC">
+          <DisplayName>Login with AAD (OIDC)</DisplayName>
+          <Description>Login with AAD (OIDC)</Description>
+          <Protocol Name="OpenIdConnect" />
+          <OutputTokenFormat>JWT</OutputTokenFormat>
+          <Metadata>
+            <Item Key="METADATA">https://login.windows.net/jasjeetaad.onmicrosoft.com/.well-known/openid-configuration</Item>
+            <Item Key="ProviderName">https://sts.windows.net/06a05be1-33df-4feb-9009-95c7a27a7a49/</Item>
+            <Item Key="client_id">a963bb4d-6216-4904-b07d-251bfbfe19c8</Item>
+            <Item Key="IdTokenAudience">a963bb4d-6216-4904-b07d-251bfbfe19c8</Item>
+            <Item Key="UsePolicyInRedirectUri">false</Item>
+            <Item Key="resource">https://graph.windows.net</Item>
+            <Item Key="response_types">code id_token</Item>
+            <Item Key="scope">openid</Item>
+            <Item Key="response_mode">form_post</Item>
+            <Item Key="HttpBinding">POST</Item>
+            <Item Key="ClaimTypeOnWhichToEnable">identityProviders</Item>
+            <Item Key="ClaimValueOnWhichToEnable">jsuri.com</Item>
+          </Metadata>
+          <!-- <CryptographicKeys>
+                        <Key Id="client_secret" StorageReferenceId="B2C_1A_aadSecretFederation" />
+                    </CryptographicKeys> -->
+          <InputClaims>
+            <!--Demo: pass the login_hint to Azure AD home realm discovery page-->
+            <InputClaim ClaimTypeReferenceId="signInName" PartnerClaimType="login_hint" />
+          </InputClaims>
+          <OutputClaims>
+            <!-- <OutputClaim ClaimTypeReferenceId="issuerUserId" PartnerClaimType="oid" /> -->
+            <OutputClaim ClaimTypeReferenceId="tenantId" PartnerClaimType="tid" />
+            <OutputClaim ClaimTypeReferenceId="givenName" PartnerClaimType="given_name" />
+            <OutputClaim ClaimTypeReferenceId="surName" PartnerClaimType="family_name" />
+            <OutputClaim ClaimTypeReferenceId="displayName" PartnerClaimType="name" />
+            <!-- <OutputClaim ClaimTypeReferenceId="authenticationSource" DefaultValue="socialIdpAuthentication" AlwaysUseDefaultValue="true" />
+            <OutputClaim ClaimTypeReferenceId="identityProvider" DefaultValue="AADOIDCIDP" AlwaysUseDefaultValue="true" /> -->
+            <OutputClaim ClaimTypeReferenceId="email" />
+          </OutputClaims>
+          <OutputClaimsTransformations>
+            <OutputClaimsTransformation ReferenceId="CreateRandomUPNUserName" />
+            <OutputClaimsTransformation ReferenceId="CreateUserPrincipalName" />
+            <OutputClaimsTransformation ReferenceId="CreateAlternativeSecurityId" />
+            <OutputClaimsTransformation ReferenceId="CreateSubjectClaimFromAlternativeSecurityId" />
+          </OutputClaimsTransformations>
+          <UseTechnicalProfileForSessionManagement ReferenceId="SM-SocialLogin" />
+          <EnabledForUserJourneys>OnItemExistenceInStringCollectionClaim</EnabledForUserJourneys>
+        </TechnicalProfile>
+      </TechnicalProfiles>
+    </ClaimsProvider>
+      <ClaimsProvider>
+      <Domain>live.com</Domain>
+      <DisplayName>Microsoft Account</DisplayName>
+      <TechnicalProfiles>
+        <TechnicalProfile Id="MSA-OIDC">
+          <DisplayName>Microsoft Account</DisplayName>
+          <Protocol Name="OpenIdConnect" />
+          <Metadata>
+            <Item Key="UsePolicyInRedirectUri">0</Item>
+            <Item Key="METADATA">https://login.microsoftonline.com/common/v2.0/.well-known/openid-configuration</Item>
+            <Item Key="response_types">code</Item>
+            <Item Key="scope">openid profile offline_access</Item>
+            <Item Key="response_mode">form_post</Item>
+            <Item Key="HttpBinding">POST</Item>
+            <Item Key="DiscoverMetadataByTokenIssuer">true</Item>
+            <Item Key="ValidTokenIssuerPrefixes">https://sts.windows.net/,https://login.microsoftonline.com/</Item>
+            <Item Key="client_id">2891e336-d0e4-46c9-bcac-ed50eee8d19c</Item>
+            <Item Key="ClaimTypeOnWhichToEnable">identityProviders</Item>
+            <Item Key="ClaimValueOnWhichToEnable">outlook.com</Item>
+          </Metadata>
+          <CryptographicKeys>
+            <Key Id="client_secret" StorageReferenceId="B2C_1A_AADCommonAppSecret" />
+          </CryptographicKeys>
+          <InputClaims>
+            <!--Demo: pass the login_hint to Azure AD home realm discovery page-->
+            <InputClaim ClaimTypeReferenceId="signInName" PartnerClaimType="login_hint" />
+          </InputClaims>
+          <OutputClaims>
+            <!-- <OutputClaim ClaimTypeReferenceId="identityProvider" DefaultValue="live.com" />
+            <OutputClaim ClaimTypeReferenceId="authenticationSource" DefaultValue="socialIdpAuthentication" />
+            <OutputClaim ClaimTypeReferenceId="issuerUserId" PartnerClaimType="sub" /> -->
+            <OutputClaim ClaimTypeReferenceId="displayName" PartnerClaimType="name" />
+            <OutputClaim ClaimTypeReferenceId="email" />
+          </OutputClaims>
+          <OutputClaimsTransformations>
+            <OutputClaimsTransformation ReferenceId="CreateRandomUPNUserName" />
+            <OutputClaimsTransformation ReferenceId="CreateUserPrincipalName" />
+            <OutputClaimsTransformation ReferenceId="CreateAlternativeSecurityId" />
+            <OutputClaimsTransformation ReferenceId="CreateSubjectClaimFromAlternativeSecurityId" />
+          </OutputClaimsTransformations>
+          <UseTechnicalProfileForSessionManagement ReferenceId="SM-SocialLogin" />
+          <EnabledForUserJourneys>OnItemExistenceInStringCollectionClaim</EnabledForUserJourneys>
+        </TechnicalProfile>
+      </TechnicalProfiles>
+    </ClaimsProvider>
+
+  <!-- Local account Sign-In claims provider -->
+  <ClaimsProvider>
+    <DisplayName>Local Account SignIn</DisplayName>
+    <TechnicalProfiles>
+      <TechnicalProfile Id="SelfAsserted-LocalAccountSignin-Phone-Email">
+          <DisplayName>collect sign-in name</DisplayName>
+
+        <OutputClaimsTransformations>
+
+            <!-- Demo: Gets the domain portion of the sign-in email address-->
+            <OutputClaimsTransformation ReferenceId="SetDomainName" />
+            <!-- Demo: Changes the case of the 'domainName' claim to lower case -->
+            <OutputClaimsTransformation ReferenceId="SetDomainNameToLower" />
+            
+            <OutputClaimsTransformation ReferenceId="CreateidentityProvidersCollection" />
+        </OutputClaimsTransformations>
+      </TechnicalProfile>
+    </TechnicalProfiles>
+    </ClaimsProvider>
+
+
+    <ClaimsProvider>
+      <DisplayName>Session Management</DisplayName>
+      <TechnicalProfiles>
+
+        <!-- Profile name is being used to disambiguate AAD session between sign up and sign in -->
+        <TechnicalProfile Id="SM-SocialSignup">
+          <IncludeTechnicalProfile ReferenceId="SM-AAD" />
+        </TechnicalProfile>
+
+        <TechnicalProfile Id="SM-SocialLogin">
+          <DisplayName>Session Mananagement Provider</DisplayName>
+          <Protocol Name="Proprietary" Handler="Web.TPEngine.SSO.ExternalLoginSSOSessionProvider, Web.TPEngine, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null" />
+          <Metadata>
+            <Item Key="AlwaysFetchClaimsFromProvider">true</Item>
+          </Metadata>
+          <PersistedClaims>
+            <PersistedClaim ClaimTypeReferenceId="alternativeSecurityId" />
+          </PersistedClaims>
+        </TechnicalProfile>
+        </TechnicalProfiles>
+        </ClaimsProvider>
+    </ClaimsProviders>
+
+  <UserJourneys>
+<UserJourney Id="SignUpOrSignInWithPhoneOrEmail-hrd">
+      <OrchestrationSteps>
+        <OrchestrationStep Order="1" Type="CombinedSignInAndSignUp" ContentDefinitionReferenceId="signuporsignin-phone-email">
+          <ClaimsProviderSelections>
+            <ClaimsProviderSelection ValidationClaimsExchangeId="LocalAccountSigninPhoneEmailExchange" />
+            <ClaimsProviderSelection TargetClaimsExchangeId="SignUpWithEmail" />
+            <ClaimsProviderSelection TargetClaimsExchangeId="SignUpWithPhone" />
+            <ClaimsProviderSelection TargetClaimsExchangeId="ChangePhoneNumber" />
+          </ClaimsProviderSelections>
+          <ClaimsExchanges>
+            <ClaimsExchange Id="LocalAccountSigninPhoneEmailExchange" TechnicalProfileReferenceId="SelfAsserted-LocalAccountSignin-Phone-Email" />
+          </ClaimsExchanges>
+        </OrchestrationStep>
+        <OrchestrationStep Order="2" Type="ClaimsExchange">
+          <Preconditions>
+            <Precondition Type="ClaimsExist" ExecuteActionsIf="true">
+              <Value>isLocalAccountSignIn</Value>
+              <Action>SkipThisOrchestrationStep</Action>
+            </Precondition>
+            <Precondition Type="ClaimsExist" ExecuteActionsIf="true">
+              <Value>objectId</Value>
+              <Action>SkipThisOrchestrationStep</Action>
+            </Precondition>
+          </Preconditions>
+          <ClaimsExchanges>
+            <ClaimsExchange Id="SignUpWithPhone" TechnicalProfileReferenceId="LocalAccountSignUpWithLogonPhoneNumber" />
+            <ClaimsExchange Id="SignUpWithEmail" TechnicalProfileReferenceId="LocalAccountSignUpWithLogonEmail" />
+            <ClaimsExchange Id="ChangePhoneNumber" TechnicalProfileReferenceId="PhoneInputPage-ChangePhoneNumberClaimsProviderSelection" />
+          </ClaimsExchanges>
+        </OrchestrationStep>
+        <OrchestrationStep Order="3" Type="ClaimsExchange">
+          <Preconditions>
+            <Precondition Type="ClaimsExist" ExecuteActionsIf="true">
+              <Value>isLocalAccountSignIn</Value>
+              <Action>SkipThisOrchestrationStep</Action>
+            </Precondition>
+            <Precondition Type="ClaimsExist" ExecuteActionsIf="true">
+              <Value>isEmailSignUp</Value>
+              <Action>SkipThisOrchestrationStep</Action>
+            </Precondition>
+            <Precondition Type="ClaimsExist" ExecuteActionsIf="true">
+              <Value>isChangePhoneNumber</Value>
+              <Action>SkipThisOrchestrationStep</Action>
+            </Precondition>
+          </Preconditions>
+          <ClaimsExchanges>
+            <ClaimsExchange Id="SignUpWithPhone_CollectEmailAddress" TechnicalProfileReferenceId="LocalAccountSignUpWithLogonPhoneNumber_CollectEmailAddress" />
+          </ClaimsExchanges>
+        </OrchestrationStep>
+
+
+
+        <OrchestrationStep Order="4" Type="InvokeSubJourney">
+          <Preconditions>
+            <Precondition Type="ClaimsExist" ExecuteActionsIf="false">
+              <Value>objectId</Value>
+              <Action>SkipThisOrchestrationStep</Action>
+            </Precondition>
+            <Precondition Type="ClaimsExist" ExecuteActionsIf="false">
+              <Value>isLocalAccountSignIn</Value>
+              <Action>SkipThisOrchestrationStep</Action>
+            </Precondition>
+          </Preconditions>
+          <JourneyList>
+            <Candidate SubJourneyReferenceId="SignInWithPhoneOrEmail" />
+          </JourneyList>
+        </OrchestrationStep>
+        <OrchestrationStep Order="5" Type="InvokeSubJourney">
+          <Preconditions>
+            <Precondition Type="ClaimsExist" ExecuteActionsIf="false">
+              <Value>isChangePhoneNumber</Value>
+              <Action>SkipThisOrchestrationStep</Action>
+            </Precondition>
+          </Preconditions>
+          <JourneyList>
+            <Candidate SubJourneyReferenceId="ChangePhoneNumber" />
+          </JourneyList>
+        </OrchestrationStep>
+
+        <OrchestrationStep Order="6" Type="ClaimsExchange">
+          <Preconditions>
+            <Precondition Type="ClaimsExist" ExecuteActionsIf="true">
+              <Value>hasFullProfile</Value>
+              <Action>SkipThisOrchestrationStep</Action>
+            </Precondition>
+          </Preconditions>
+          <ClaimsExchanges>
+            <ClaimsExchange Id="AADUserReadWithObjectId" TechnicalProfileReferenceId="AAD-UserReadUsingObjectId" />
+          </ClaimsExchanges>
+        </OrchestrationStep>
+
+        <OrchestrationStep Order="7" Type="SendClaims" CpimIssuerTechnicalProfileReferenceId="JwtIssuer" />
+      </OrchestrationSteps>
+      <ClientDefinition ReferenceId="DefaultWeb" />
+    </UserJourney>
+  </UserJourneys>
+
+  <SubJourneys>
+    <SubJourney Id="HRD" Type="Call">
+      <OrchestrationSteps>
+        <!-- If the domain matched any known domain, then this step will have a single IdP
+                    enabled due to each known IdP TP having an enablement flag via identityProviders claim -->
+        <OrchestrationStep Order="1" Type="ClaimsProviderSelection" ContentDefinitionReferenceId="api.idpselections">
+          <!-- <Preconditions>
+            <Precondition Type="ClaimEquals" ExecuteActionsIf="false">
+              <Value>isKnownCustomer</Value>
+              <Value>True</Value>
+              <Action>SkipThisOrchestrationStep</Action>
+            </Precondition>
+          </Preconditions> -->
+          <ClaimsProviderSelections>
+            <ClaimsProviderSelection TargetClaimsExchangeId="AADOIDC" />
+            <ClaimsProviderSelection TargetClaimsExchangeId="MSAOIDC" />
+          </ClaimsProviderSelections>
+        </OrchestrationStep>
+        <OrchestrationStep Order="2" Type="ClaimsExchange">
+          <Preconditions>
+            <Precondition Type="ClaimsExist" ExecuteActionsIf="true">
+              <Value>objectId</Value>
+              <Action>SkipThisOrchestrationStep</Action>
+            </Precondition>
+            <!-- <Precondition Type="ClaimEquals" ExecuteActionsIf="false">
+              <Value>isKnownCustomer</Value>
+              <Value>True</Value>
+              <Action>SkipThisOrchestrationStep</Action>
+            </Precondition>-->
+          </Preconditions> 
+          <ClaimsExchanges>
+            <ClaimsExchange Id="AADOIDC" TechnicalProfileReferenceId="AAD-OIDC" />
+            <ClaimsExchange Id="MSAOIDC" TechnicalProfileReferenceId="MSA-OIDC" />
+          </ClaimsExchanges>
+        </OrchestrationStep>
+      </OrchestrationSteps>
+    </SubJourney>
+  </SubJourneys>
+
+  <RelyingParty>
+    <DefaultUserJourney ReferenceId="SignUpOrSignInWithPhoneOrEmail-hrd" />
+    <UserJourneyBehaviors>
+     <JourneyInsights TelemetryEngine="ApplicationInsights" InstrumentationKey="bc786ced-2707-40b7-8df9-d9e9345d8f89" DeveloperMode="true" ClientEnabled="true" ServerEnabled="true" TelemetryVersion="1.0.0" />
+    </UserJourneyBehaviors>
+
+    <TechnicalProfile Id="PolicyProfile">
+      <DisplayName>PolicyProfile</DisplayName>
+      <Protocol Name="OpenIdConnect" />
+      <OutputClaims>
+        <OutputClaim ClaimTypeReferenceId="displayName" />
+        <OutputClaim ClaimTypeReferenceId="givenName" />
+        <OutputClaim ClaimTypeReferenceId="surname" />
+        <OutputClaim ClaimTypeReferenceId="signInNames.phoneNumber" />
+        <OutputClaim ClaimTypeReferenceId="signInNames.emailAddress" />
+        <OutputClaim ClaimTypeReferenceId="strongAuthenticationEmailAddress" />
+        <OutputClaim ClaimTypeReferenceId="objectId" PartnerClaimType="sub" />
+        <OutputClaim ClaimTypeReferenceId="tenantId" AlwaysUseDefaultValue="true" DefaultValue="{Policy:TenantObjectId}" />
+      </OutputClaims>
+      <SubjectNamingInfo ClaimType="sub" />
+    </TechnicalProfile>
+  </RelyingParty>
+</TrustFrameworkPolicy>
