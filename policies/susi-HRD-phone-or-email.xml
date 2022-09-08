@@ -1,28 +1,41 @@
-<TrustFrameworkPolicy xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
-xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns="http://schemas.microsoft.com/online/cpim/schemas/2013/06" 
-PolicySchemaVersion="0.3.0.0" TenantId="dee2c.onmicrosoft.com"
- PolicyId="B2C_1A_susi-HRD-phone-or-email" 
-PublicPolicyUri="http://yourtenant.onmicrosoft.com/B2C_1A_susi-HRD-phone-or-email"
-DeploymentMode="Development" UserJourneyRecorderEndpoint="urn:journeyrecorder:applicationinsights" >
+<TrustFrameworkPolicy xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+  xmlns="http://schemas.microsoft.com/online/cpim/schemas/2013/06" PolicySchemaVersion="0.3.0.0" TenantId="dee2c.onmicrosoft.com" PolicyId="B2C_1A_susi-HRD-phone-or-email" PublicPolicyUri="http://yourtenant.onmicrosoft.com/B2C_1A_susi-HRD-phone-or-email" DeploymentMode="Development" UserJourneyRecorderEndpoint="urn:journeyrecorder:applicationinsights">
   <BasePolicy>
     <TenantId>dee2c.onmicrosoft.com</TenantId>
     <PolicyId>B2C_1A_Phone_Email_Base</PolicyId>
   </BasePolicy>
 
-<BuildingBlocks>
+  <BuildingBlocks>
 
-	<ClaimsSchema>
-    <!--Demo: Stores the domain portion of the sign-in email address-->
-	   <ClaimType Id="domainName">
+    <ClaimsSchema>
+      <!--Demo: Stores the domain portion of the sign-in email address-->
+      <ClaimType Id="domainName">
         <DisplayName>domainName</DisplayName>
         <DataType>string</DataType>
       </ClaimType>
-            <ClaimType Id="identityProviders">
+      <ClaimType Id="identityProviders">
         <DisplayName>IdentityProviders</DisplayName>
         <DataType>stringCollection</DataType>
         <UserHelpText>User identity providers</UserHelpText>
       </ClaimType>
 
+      <ClaimType Id="knownDomain">
+        <DisplayName>knownDomain</DisplayName>
+        <DataType>string</DataType>
+        <UserHelpText>if this a domain that is a customer</UserHelpText>
+      </ClaimType>
+      <ClaimType Id="isKnownCustomer">
+        <DisplayName>knownDomain</DisplayName>
+        <DataType>boolean</DataType>
+        <UserHelpText>if this a domain that is a customer</UserHelpText>
+      </ClaimType>
+
+      <ClaimType Id="dummyTrue">
+        <DisplayName>dummy value for comparison</DisplayName>
+        <DataType>string</DataType>
+        <UserHelpText />
+      </ClaimType>
 
       <!-- The claim socialIdpUserId has been renamed to issuerUserId -->
       <ClaimType Id="issuerUserId">
@@ -69,30 +82,31 @@ DeploymentMode="Development" UserJourneyRecorderEndpoint="urn:journeyrecorder:ap
       </ClaimType>
     </ClaimsSchema>
 
-	<ClaimsTransformations>
-  <!--Demo: Gets the domain portion of the sign-in email address-->
-  <ClaimsTransformation Id="SetDomainName" TransformationMethod="ParseDomain">
-	  <InputClaims>
-		  <InputClaim ClaimTypeReferenceId="signInName" TransformationClaimType="emailAddress" />
-	  </InputClaims>
-	  <OutputClaims>
-		  <OutputClaim ClaimTypeReferenceId="domainName" TransformationClaimType="domain" />
-	  </OutputClaims>
-	</ClaimsTransformation>
+    <ClaimsTransformations>
+      <!--Demo: Gets the domain portion of the sign-in email address-->
+      <ClaimsTransformation Id="SetDomainName" TransformationMethod="ParseDomain">
+        <InputClaims>
+          <InputClaim ClaimTypeReferenceId="signInName" TransformationClaimType="emailAddress" />
+        </InputClaims>
+        <OutputClaims>
+          <OutputClaim ClaimTypeReferenceId="domainName" TransformationClaimType="domain" />
+        </OutputClaims>
+      </ClaimsTransformation>
 
-  <!--Demo: Changes the case of the 'domainName' claim to lower case -->
-  <ClaimsTransformation Id="SetDomainNameToLower" TransformationMethod="ChangeCase">
-    <InputClaims>
-      <InputClaim ClaimTypeReferenceId="domainName" TransformationClaimType="inputClaim1" />
-    </InputClaims>
-    <InputParameters>
-      <InputParameter Id="toCase" DataType="string" Value="LOWER" />
-    </InputParameters>
-    <OutputClaims>
-      <OutputClaim ClaimTypeReferenceId="domainName" TransformationClaimType="outputClaim" />
-    </OutputClaims>
-  </ClaimsTransformation>
-  <ClaimsTransformation Id="CreateidentityProvidersCollection" TransformationMethod="AddItemToStringCollection">
+      <!--Demo: Changes the case of the 'domainName' claim to lower case -->
+      <ClaimsTransformation Id="SetDomainNameToLower" TransformationMethod="ChangeCase">
+        <InputClaims>
+          <InputClaim ClaimTypeReferenceId="domainName" TransformationClaimType="inputClaim1" />
+        </InputClaims>
+        <InputParameters>
+          <InputParameter Id="toCase" DataType="string" Value="LOWER" />
+        </InputParameters>
+        <OutputClaims>
+          <OutputClaim ClaimTypeReferenceId="domainName" TransformationClaimType="outputClaim" />
+        </OutputClaims>
+      </ClaimsTransformation>
+
+      <ClaimsTransformation Id="CreateidentityProvidersCollection" TransformationMethod="AddItemToStringCollection">
         <InputClaims>
           <InputClaim ClaimTypeReferenceId="domainName" TransformationClaimType="item" />
           <InputClaim ClaimTypeReferenceId="identityProviders" TransformationClaimType="collection" />
@@ -102,7 +116,35 @@ DeploymentMode="Development" UserJourneyRecorderEndpoint="urn:journeyrecorder:ap
         </OutputClaims>
       </ClaimsTransformation>
 
-            <ClaimsTransformation Id="CreateAlternativeSecurityId" TransformationMethod="CreateAlternativeSecurityId">
+      <ClaimsTransformation Id="DomainLookup" TransformationMethod="LookupValue">
+        <InputClaims>
+          <InputClaim ClaimTypeReferenceId="domainName" TransformationClaimType="inputParameterId" />
+        </InputClaims>
+        <InputParameters>
+          <InputParameter Id="bolt-io.dev" DataType="string" Value="true" />
+          <InputParameter Id="outlook.com" DataType="string" Value="true" />
+          <InputParameter Id="errorOnFailedLookup" DataType="boolean" Value="false" />
+        </InputParameters>
+        <OutputClaims>
+          <OutputClaim ClaimTypeReferenceId="knownDomain" TransformationClaimType="outputClaim" />
+        </OutputClaims>
+      </ClaimsTransformation>
+      <ClaimsTransformation Id="CheckDomainParameterValue" TransformationMethod="CompareClaims">
+        <InputClaims>
+          <InputClaim ClaimTypeReferenceId="knownDomain" TransformationClaimType="inputClaim1" />
+          <InputClaim ClaimTypeReferenceId="dummyTrue" TransformationClaimType="inputClaim2" />
+        </InputClaims>
+        <InputParameters>
+          <InputParameter Id="operator" DataType="string" Value="EQUAL" />
+          <InputParameter Id="ignoreCase" DataType="string" Value="true" />
+        </InputParameters>
+        <OutputClaims>
+          <OutputClaim ClaimTypeReferenceId="isKnownCustomer" TransformationClaimType="outputClaim" />
+        </OutputClaims>
+      </ClaimsTransformation>
+
+
+      <ClaimsTransformation Id="CreateAlternativeSecurityId" TransformationMethod="CreateAlternativeSecurityId">
         <InputClaims>
           <InputClaim ClaimTypeReferenceId="issuerUserId" TransformationClaimType="key" />
           <InputClaim ClaimTypeReferenceId="identityProvider" TransformationClaimType="identityProvider" />
@@ -120,12 +162,12 @@ DeploymentMode="Development" UserJourneyRecorderEndpoint="urn:journeyrecorder:ap
           <OutputClaim ClaimTypeReferenceId="sub" TransformationClaimType="createdClaim" />
         </OutputClaims>
       </ClaimsTransformation>
-	</ClaimsTransformations>
+    </ClaimsTransformations>
   </BuildingBlocks>
 
   <ClaimsProviders>
 
-  <ClaimsProvider>
+    <ClaimsProvider>
       <DisplayName>Login with AAD OIDC</DisplayName>
       <TechnicalProfiles>
         <TechnicalProfile Id="AAD-OIDC">
@@ -175,7 +217,7 @@ DeploymentMode="Development" UserJourneyRecorderEndpoint="urn:journeyrecorder:ap
         </TechnicalProfile>
       </TechnicalProfiles>
     </ClaimsProvider>
-      <ClaimsProvider>
+    <ClaimsProvider>
       <Domain>live.com</Domain>
       <DisplayName>Microsoft Account</DisplayName>
       <TechnicalProfiles>
@@ -221,24 +263,29 @@ DeploymentMode="Development" UserJourneyRecorderEndpoint="urn:journeyrecorder:ap
       </TechnicalProfiles>
     </ClaimsProvider>
 
-  <!-- Local account Sign-In claims provider -->
-  <ClaimsProvider>
-    <DisplayName>Local Account SignIn</DisplayName>
-    <TechnicalProfiles>
-      <TechnicalProfile Id="SelfAsserted-LocalAccountSignin-Phone-Email">
+    <!-- Local account Sign-In claims provider -->
+    <ClaimsProvider>
+      <DisplayName>Local Account SignIn</DisplayName>
+      <TechnicalProfiles>
+        <TechnicalProfile Id="SelfAsserted-LocalAccountSignin-Phone-Email">
           <DisplayName>collect sign-in name</DisplayName>
-
-        <OutputClaimsTransformations>
+          <InputClaims>
+            <InputClaim ClaimTypeReferenceId="dummyTrue" DefaultValue="true" />
+            <InputClaim ClaimTypeReferenceId="signInName" DefaultValue="{OIDC:LoginHint}" />
+          </InputClaims>
+          <OutputClaimsTransformations>
 
             <!-- Demo: Gets the domain portion of the sign-in email address-->
             <OutputClaimsTransformation ReferenceId="SetDomainName" />
             <!-- Demo: Changes the case of the 'domainName' claim to lower case -->
             <OutputClaimsTransformation ReferenceId="SetDomainNameToLower" />
-            
+            <OutputClaimsTransformation ReferenceId="DomainLookup" />
+            <OutputClaimsTransformation ReferenceId="CheckDomainParameterValue" />
+
             <OutputClaimsTransformation ReferenceId="CreateidentityProvidersCollection" />
-        </OutputClaimsTransformations>
-      </TechnicalProfile>
-    </TechnicalProfiles>
+          </OutputClaimsTransformations>
+        </TechnicalProfile>
+      </TechnicalProfiles>
     </ClaimsProvider>
 
 
@@ -261,12 +308,12 @@ DeploymentMode="Development" UserJourneyRecorderEndpoint="urn:journeyrecorder:ap
             <PersistedClaim ClaimTypeReferenceId="alternativeSecurityId" />
           </PersistedClaims>
         </TechnicalProfile>
-        </TechnicalProfiles>
-        </ClaimsProvider>
-    </ClaimsProviders>
+      </TechnicalProfiles>
+    </ClaimsProvider>
+  </ClaimsProviders>
 
   <UserJourneys>
-<UserJourney Id="SignUpOrSignInWithPhoneOrEmail-hrd">
+    <UserJourney Id="SignUpOrSignInWithPhoneOrEmail-hrd">
       <OrchestrationSteps>
         <OrchestrationStep Order="1" Type="CombinedSignInAndSignUp" ContentDefinitionReferenceId="signuporsignin-phone-email">
           <ClaimsProviderSelections>
@@ -316,12 +363,36 @@ DeploymentMode="Development" UserJourneyRecorderEndpoint="urn:journeyrecorder:ap
           </ClaimsExchanges>
         </OrchestrationStep>
 
-
-
         <OrchestrationStep Order="4" Type="InvokeSubJourney">
           <Preconditions>
             <Precondition Type="ClaimsExist" ExecuteActionsIf="false">
-              <Value>objectId</Value>
+              <Value>isLocalAccountSignIn</Value>
+              <Action>SkipThisOrchestrationStep</Action>
+            </Precondition>
+            <Precondition Type="ClaimsExist" ExecuteActionsIf="false">
+              <Value>knownDomain</Value>
+              <Action>SkipThisOrchestrationStep</Action>
+            </Precondition>
+            <Precondition Type="ClaimEquals" ExecuteActionsIf="false">
+              <Value>knownDomain</Value>
+              <Value>true</Value>
+              <Action>SkipThisOrchestrationStep</Action>
+            </Precondition>
+            <Precondition Type="ClaimsExist" ExecuteActionsIf="false">
+              <Value>email</Value>
+              <Action>SkipThisOrchestrationStep</Action>
+            </Precondition>
+          </Preconditions>
+          <JourneyList>
+            <Candidate SubJourneyReferenceId="HRD" />
+          </JourneyList>
+        </OrchestrationStep>
+
+        <OrchestrationStep Order="5" Type="InvokeSubJourney">
+          <Preconditions>
+            <Precondition Type="ClaimEquals" ExecuteActionsIf="true">
+              <Value>knownDomain</Value>
+              <Value>true</Value>
               <Action>SkipThisOrchestrationStep</Action>
             </Precondition>
             <Precondition Type="ClaimsExist" ExecuteActionsIf="false">
@@ -333,7 +404,7 @@ DeploymentMode="Development" UserJourneyRecorderEndpoint="urn:journeyrecorder:ap
             <Candidate SubJourneyReferenceId="SignInWithPhoneOrEmail" />
           </JourneyList>
         </OrchestrationStep>
-        <OrchestrationStep Order="5" Type="InvokeSubJourney">
+        <OrchestrationStep Order="6" Type="InvokeSubJourney">
           <Preconditions>
             <Precondition Type="ClaimsExist" ExecuteActionsIf="false">
               <Value>isChangePhoneNumber</Value>
@@ -345,7 +416,7 @@ DeploymentMode="Development" UserJourneyRecorderEndpoint="urn:journeyrecorder:ap
           </JourneyList>
         </OrchestrationStep>
 
-        <OrchestrationStep Order="6" Type="ClaimsExchange">
+        <OrchestrationStep Order="7" Type="ClaimsExchange">
           <Preconditions>
             <Precondition Type="ClaimsExist" ExecuteActionsIf="true">
               <Value>hasFullProfile</Value>
@@ -357,7 +428,7 @@ DeploymentMode="Development" UserJourneyRecorderEndpoint="urn:journeyrecorder:ap
           </ClaimsExchanges>
         </OrchestrationStep>
 
-        <OrchestrationStep Order="7" Type="SendClaims" CpimIssuerTechnicalProfileReferenceId="JwtIssuer" />
+        <OrchestrationStep Order="8" Type="SendClaims" CpimIssuerTechnicalProfileReferenceId="JwtIssuer" />
       </OrchestrationSteps>
       <ClientDefinition ReferenceId="DefaultWeb" />
     </UserJourney>
@@ -392,7 +463,7 @@ DeploymentMode="Development" UserJourneyRecorderEndpoint="urn:journeyrecorder:ap
               <Value>True</Value>
               <Action>SkipThisOrchestrationStep</Action>
             </Precondition>-->
-          </Preconditions> 
+          </Preconditions>
           <ClaimsExchanges>
             <ClaimsExchange Id="AADOIDC" TechnicalProfileReferenceId="AAD-OIDC" />
             <ClaimsExchange Id="MSAOIDC" TechnicalProfileReferenceId="MSA-OIDC" />
@@ -405,7 +476,7 @@ DeploymentMode="Development" UserJourneyRecorderEndpoint="urn:journeyrecorder:ap
   <RelyingParty>
     <DefaultUserJourney ReferenceId="SignUpOrSignInWithPhoneOrEmail-hrd" />
     <UserJourneyBehaviors>
-     <JourneyInsights TelemetryEngine="ApplicationInsights" InstrumentationKey="bc786ced-2707-40b7-8df9-d9e9345d8f89" DeveloperMode="true" ClientEnabled="true" ServerEnabled="true" TelemetryVersion="1.0.0" />
+      <JourneyInsights TelemetryEngine="ApplicationInsights" InstrumentationKey="bc786ced-2707-40b7-8df9-d9e9345d8f89" DeveloperMode="true" ClientEnabled="true" ServerEnabled="true" TelemetryVersion="1.0.0" />
     </UserJourneyBehaviors>
 
     <TechnicalProfile Id="PolicyProfile">
