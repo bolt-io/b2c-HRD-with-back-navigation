@@ -2,7 +2,7 @@
   xmlns:xsd="http://www.w3.org/2001/XMLSchema"
   xmlns="http://schemas.microsoft.com/online/cpim/schemas/2013/06" PolicySchemaVersion="0.3.0.0" TenantId="dee2c.onmicrosoft.com" PolicyId="B2C_1A_susi-HRD-phone-or-email" PublicPolicyUri="http://yourtenant.onmicrosoft.com/B2C_1A_susi-HRD-phone-or-email" DeploymentMode="Development" UserJourneyRecorderEndpoint="urn:journeyrecorder:applicationinsights">
   <BasePolicy>
-    <TenantId>dee2c.onmicrosoft.com</TenantId>
+    <TenantId>yourtenant.onmicrosoft.com</TenantId>
     <PolicyId>B2C_1A_Phone_Email_Base</PolicyId>
   </BasePolicy>
 
@@ -121,7 +121,7 @@
           <InputClaim ClaimTypeReferenceId="domainName" TransformationClaimType="inputParameterId" />
         </InputClaims>
         <InputParameters>
-          <InputParameter Id="bolt-io.dev" DataType="string" Value="true" />
+          <InputParameter Id="yourdomain.co.uk" DataType="string" Value="true" />
           <InputParameter Id="outlook.com" DataType="string" Value="true" />
           <InputParameter Id="errorOnFailedLookup" DataType="boolean" Value="false" />
         </InputParameters>
@@ -176,10 +176,10 @@
           <Protocol Name="OpenIdConnect" />
           <OutputTokenFormat>JWT</OutputTokenFormat>
           <Metadata>
-            <Item Key="METADATA">https://login.windows.net/jasjeetaad.onmicrosoft.com/.well-known/openid-configuration</Item>
+            <Item Key="METADATA">https://login.windows.net/yourcorptenant.onmicrosoft.com/.well-known/openid-configuration</Item>
             <Item Key="ProviderName">https://sts.windows.net/06a05be1-33df-4feb-9009-95c7a27a7a49/</Item>
-            <Item Key="client_id">a963bb4d-6216-4904-b07d-251bfbfe19c8</Item>
-            <Item Key="IdTokenAudience">a963bb4d-6216-4904-b07d-251bfbfe19c8</Item>
+            <Item Key="client_id">your-client-id</Item>
+            <Item Key="IdTokenAudience">your-audience</Item>
             <Item Key="UsePolicyInRedirectUri">false</Item>
             <Item Key="resource">https://graph.windows.net</Item>
             <Item Key="response_types">code id_token</Item>
@@ -187,13 +187,13 @@
             <Item Key="response_mode">form_post</Item>
             <Item Key="HttpBinding">POST</Item>
             <Item Key="ClaimTypeOnWhichToEnable">identityProviders</Item>
-            <Item Key="ClaimValueOnWhichToEnable">jsuri.com</Item>
+            <Item Key="ClaimValueOnWhichToEnable">yourdomain.co.uk</Item>
           </Metadata>
           <!-- <CryptographicKeys>
                         <Key Id="client_secret" StorageReferenceId="B2C_1A_aadSecretFederation" />
                     </CryptographicKeys> -->
           <InputClaims>
-            <!--Demo: pass the login_hint to Azure AD home realm discovery page-->
+            <!-- pass the login_hint to Azure AD home realm discovery page-->
             <InputClaim ClaimTypeReferenceId="signInName" PartnerClaimType="login_hint" />
           </InputClaims>
           <OutputClaims>
@@ -233,7 +233,7 @@
             <Item Key="HttpBinding">POST</Item>
             <Item Key="DiscoverMetadataByTokenIssuer">true</Item>
             <Item Key="ValidTokenIssuerPrefixes">https://sts.windows.net/,https://login.microsoftonline.com/</Item>
-            <Item Key="client_id">2891e336-d0e4-46c9-bcac-ed50eee8d19c</Item>
+            <Item Key="client_id">your-multi-tenancy-app-id</Item>
             <Item Key="ClaimTypeOnWhichToEnable">identityProviders</Item>
             <Item Key="ClaimValueOnWhichToEnable">outlook.com</Item>
           </Metadata>
@@ -245,9 +245,9 @@
             <InputClaim ClaimTypeReferenceId="signInName" PartnerClaimType="login_hint" />
           </InputClaims>
           <OutputClaims>
-            <!-- <OutputClaim ClaimTypeReferenceId="identityProvider" DefaultValue="live.com" />
+            <OutputClaim ClaimTypeReferenceId="identityProvider" DefaultValue="live.com" />
             <OutputClaim ClaimTypeReferenceId="authenticationSource" DefaultValue="socialIdpAuthentication" />
-            <OutputClaim ClaimTypeReferenceId="issuerUserId" PartnerClaimType="sub" /> -->
+            <OutputClaim ClaimTypeReferenceId="issuerUserId" PartnerClaimType="sub" />
             <OutputClaim ClaimTypeReferenceId="displayName" PartnerClaimType="name" />
             <OutputClaim ClaimTypeReferenceId="email" />
           </OutputClaims>
